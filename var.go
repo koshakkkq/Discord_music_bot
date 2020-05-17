@@ -1,6 +1,5 @@
 package main
 
-//import "fmt"
 const (
 	channels  int = 2                   // 1 for mono, 2 for stereo
 	frameRate int = 48000               // audio sampling rate

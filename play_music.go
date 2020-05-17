@@ -1,8 +1,9 @@
 package main
 
 import (
+	"encoding/binary"
+	"github.com/jonas747/dca"
 	"github.com/rs/zerolog/log"
-	"layeh.com/gopus"
 	"net/http"
 
 	//"github.com/jonas747/dca"
@@ -14,24 +15,25 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 )
-func straem_to_discord(s *discordgo.Session, m *discordgo.MessageCreate, url string){
+
+func straem_to_discord(s *discordgo.Session, m *discordgo.MessageCreate, url string) {
 	channel, err := s.State.Channel(m.ChannelID)
-	if err!=nil{
+	if err != nil {
 		fmt.Println(err)
 	}
-	guild,_ := s.State.Guild(channel.GuildID)
-	for _, vs := range guild.VoiceStates{
-		if (vs.UserID == m.Author.ID){
+	guild, _ := s.State.Guild(channel.GuildID)
+	for _, vs := range guild.VoiceStates {
+		if vs.UserID == m.Author.ID {
 			URL_deocde(s, guild.ID, vs.ChannelID, url)
 		}
 	}
 }
-func get_url (videoURL string) (string){
+func get_url(videoURL string) string {
 	client := ytdl.Client{
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Logger,
 	}
-	c :=  context.Background()
+	c := context.Background()
 	vid, err := client.GetVideoInfo(c, videoURL)
 	if err != nil {
 		fmt.Println("Failed to get video info")
@@ -41,26 +43,33 @@ func get_url (videoURL string) (string){
 	DownloadURL, _ := client.GetDownloadURL(c, vid, format)
 	return DownloadURL.String()
 }
-func URL_deocde(s *discordgo.Session, guildID,channelID, videoURL string){
-
-}
-func SendPCM(vc *discordgo.VoiceConnection, pcm <-chan []int16){
-	if pcm==nil {
-		return
-	}
-	opusEncoder, _ := gopus.NewEncoder(frameRate, channels, gopus.Audio)
-
+func URL_deocde(s *discordgo.Session, guildID, channelID, videoURL string) {
+	options := dca.StdEncodeOptions
+	options.RawOutput = true
+	options.Bitrate = 96
+	options.Application = "lowdelay"
+	url := get_url(videoURL)
+	dca.EncodeFile(url, options)
+	vc, _ := s.ChannelVoiceJoin(guildID, channelID, false, false)
+	defer vc.Disconnect()
+	encode, _ := dca.EncodeFile(url, options)
+	buffer := make([][]byte, 0)
+	defer encode.Cleanup()
 	for {
-		recv, ok := <-pcm
-		if !ok {
-			fmt.Println("PCM Channel closed", nil)
-			return
-		}
-		opus, err := opusEncoder.Encode(recv, frameSize, maxBytes)
+		var sz_frame int16
+		err := binary.Read(encode, binary.LittleEndian, &sz_frame)
 		if err != nil {
-			fmt.Println("Encoding Error", err)
-			return
+			break
 		}
-		vc.OpusSend <- opus
+		Inbuf := make([]byte, sz_frame)
+		_ = binary.Read(encode, binary.LittleEndian, &Inbuf)
+		buffer = append(buffer, Inbuf)
 	}
+	SendPCM(vc, buffer)
+}
+func SendPCM(vc *discordgo.VoiceConnection, buffer [][]byte) {
+	for _, buff := range buffer {
+		vc.OpusSend <- buff
+	}
+	return
 }
