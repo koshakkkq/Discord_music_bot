@@ -73,3 +73,4 @@ func SendPCM(vc *discordgo.VoiceConnection, buffer [][]byte) {
 	}
 	return
 }
+//LOL CHESVIN
