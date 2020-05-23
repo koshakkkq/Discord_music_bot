@@ -31,27 +31,29 @@ func main(){
 		return
 	}
 	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
+	go queue_way()
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM)
 	<-sc
 	fmt.Println("asdasd")
 	dg.Close()
 }
-func music_load(){
-
-
-
-}
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate){
 	if (m.Author.ID==s.State.User.ID) {
 		return
 	}
-	if (m.Content[0]=='!'){
+	if (m.Content=="!stop"){
+		go stop_stream(s, m)
+	}
+	if (m.Content=="!pause"){
+		go pause_stream(s, m)
+	}
+	if (m.Content[0]=='!') {
 		msg_string := string(m.Content)
-		bot_func := strings.Split(msg_string[1:len(msg_string)]," ")
+		bot_func := strings.Split(msg_string[1:len(msg_string)], " ")
 		switch bot_func[0] {
 		case "play":
-			straem_to_discord(s, m, bot_func[1])
+			go straem_to_discord(s, m, bot_func[1])
 		}
 	}
 	if (m.Content=="Снюс"){
