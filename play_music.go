@@ -4,12 +4,9 @@ import (
 	"encoding/binary"
 	"github.com/jonas747/dca"
 	"github.com/rs/zerolog/log"
-	"net/http"
-	//"github.com/jonas747/dca"
-	//"encoding/binary"
-	//"github.com/davecgh/go-spew/spew"
 	"github.com/rylio/ytdl"
-	//"net/http"
+	"net/http"
+
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
@@ -24,6 +21,7 @@ func stop_stream(s *discordgo.Session, m *discordgo.MessageCreate){
 	for _, vs := range guild.VoiceStates {
 		if vs.UserID == m.Author.ID {
 			servers_vc[vs.GuildID].music_queue[0].stop = true
+			stop_msg(s, m.ChannelID)
 		}
 	}
 }
@@ -36,6 +34,7 @@ func pause_stream(s *discordgo.Session, m *discordgo.MessageCreate){
 	for _, vs := range guild.VoiceStates {
 		if vs.UserID == m.Author.ID {
 			servers_vc[vs.GuildID].music_queue[0].pause <- true
+			pause_msg(s, m.ChannelID)
 		}
 	}
 }
@@ -55,6 +54,7 @@ func straem_to_discord(s *discordgo.Session, m *discordgo.MessageCreate, url str
 			mi.Autorname= m.Author.Username
 			mi.channelID = vs.ChannelID
 			mi.s = s
+			mi.text_channelId = m.ChannelID
 			mi.pause=make(chan bool ,1)
 			queue_chan <- mi
 		}
@@ -73,6 +73,7 @@ func queue_way(){
 			servers_vc[mi.guildID].music_queue = append(servers_vc[mi.guildID].music_queue, mi)
 			go play_on_server(mi.guildID)
 		} else {
+			queue_msg(servers_vc[mi.guildID].music_queue[0].s, mi.text_channelId, mi.songname,mi.Autorname)
 			servers_vc[mi.guildID].music_queue = append(servers_vc[mi.guildID].music_queue, mi)
 		}
 	}
@@ -82,6 +83,7 @@ func play_on_server(guildID string){
 		if len(servers_vc[guildID].music_queue) == 0{
 			break
 		}
+		playing_msg(servers_vc[guildID].music_queue[0].s, servers_vc[guildID].music_queue[0].text_channelId, servers_vc[guildID].music_queue[0].songname,servers_vc[guildID].music_queue[0].Autorname)
 		stop_status := play(servers_vc[guildID].music_queue[0].guildID,servers_vc[guildID].music_queue[0].channelID, servers_vc[guildID].music_queue[0].url, servers_vc[guildID].vc)
 		if stop_status == true{
 			break

@@ -14,11 +14,15 @@ type server_queue struct {
 	music_queue []*music_info
 	vc *discordgo.VoiceConnection
 }
-
+type config struct {
+	Token string
+	PREFIX string
+}
 type music_info struct {
 	songname string
 	Autorname string
 	url string
+	text_channelId string
 	guildID string
 	channelID string
 	pause chan bool
