@@ -1,5 +1,5 @@
 # Discord_music_bot
-Just create the config!/n
+Just create the config!
 name it config.json
 {
 	"Token" : "Your_token",
