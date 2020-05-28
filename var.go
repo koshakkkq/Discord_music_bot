@@ -17,6 +17,11 @@ type server_queue struct {
 type config struct {
 	Token string
 	PREFIX string
+	YT_KEY string
+ }
+type id_video struct {
+	kind string
+	videoId string
 }
 type music_info struct {
 	songname string

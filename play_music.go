@@ -2,16 +2,27 @@ package main
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"github.com/jonas747/dca"
 	"github.com/rs/zerolog/log"
 	"github.com/rylio/ytdl"
+	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 )
-
+func create_name_to_get(s string)(string){
+	sm := strings.Split(s, " ")
+	name := ""
+	for _, add := range sm{
+		name += add + "%20"
+	}
+	name = strings.TrimSuffix(name, "%20")
+	return name
+}
 func stop_stream(s *discordgo.Session, m *discordgo.MessageCreate){
 	channel, err := s.State.Channel(m.ChannelID)
 	if err != nil {
@@ -38,8 +49,54 @@ func pause_stream(s *discordgo.Session, m *discordgo.MessageCreate){
 		}
 	}
 }
+func get_video_from_name(name string)(string, bool){
+	name_to_get := create_name_to_get(name)
+	get := fmt.Sprintf("https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=%s&type=video&key=" + conf.YT_KEY, name_to_get)
+	r, err := http.Get(get)
+	if err!=nil{
+		return get, false
+	}
+
+	resp_iotil, err := ioutil.ReadAll(r.Body)
+	var body map[string]interface{}
+	err = json.Unmarshal([]byte(resp_iotil), &body)
+	if err!=nil{
+		return  name, false
+	}
+	if len(body["items"].([]interface{})) == 0 {
+		return name, false
+	}
+	items := body["items"].([]interface{})[0]
+	items_info := items.(map[string]interface{})
+	id2 := items_info["id"].(map[string]interface{})
+	video_id := id2["videoId"]
+	return video_id.(string), true
+}
+func url_or_not(s string)(string, bool){
+	if len(s)<15{
+		id, status := get_video_from_name(s)
+		return "https://www.youtube.com/watch?v="+id, status
+	} else if (s[0:14]=="www.youtube.com"){
+		return "https://"+s ,true
+	} else if len(s)>=24{
+		if (s[0:23]=="https://www.youtube.com/") {
+			return s, true
+		} else {
+			id, status := get_video_from_name(s)
+			return "https://www.youtube.com/watch?v="+id, status
+		}
+	} else {
+		id, status := get_video_from_name(s)
+		return "https://www.youtube.com/watch?v="+id, status
+	}
+}
 func straem_to_discord(s *discordgo.Session, m *discordgo.MessageCreate, url string) {
 	channel, err := s.State.Channel(m.ChannelID)
+	var status bool
+	url,status = url_or_not(url)
+	if (status == false){
+		return
+	}
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -105,7 +162,10 @@ func get_url(videoURL string) (string, string) {
 	}
 
 	format := vid.Formats.Extremes(ytdl.FormatAudioBitrateKey, true)[0]
-	DownloadURL, _ := client.GetDownloadURL(c, vid, format)
+	DownloadURL, err := client.GetDownloadURL(c, vid, format)
+	if err != nil{
+		fmt.Println("failed_to_download ", err)
+	}
 	return DownloadURL.String(), vid.Title
 }
 func play(guildID, channelID, url string, vc *discordgo.VoiceConnection) bool {

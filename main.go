@@ -41,10 +41,16 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate){
 	bot_func := strings.Split(msg_string, " ")
 	switch bot_func[0] {
 		case conf.PREFIX+"play":
-			if len(bot_func)!=2{
-				err_msg(s, m.ChannelID, "БЛЯТЬ СЛОЖНО ПРАВЛЬНО НАБРАТЬ? !play сслыка, Мудка ебанный бан!")
+			if len(bot_func)==1{
+				err_msg(s, m.ChannelID, "Try !play [song/url]")
 			}
-			go straem_to_discord(s, m, bot_func[1])
+			var song_name string
+			song_name = ""
+			for i := 1; i<len(bot_func);i++{
+				song_name+=bot_func[i]+" "
+			}
+			song_name = strings.TrimSuffix(song_name, " ")
+			go straem_to_discord(s, m, song_name)
 		case conf.PREFIX+"stop":
 			go stop_stream(s, m)
 		case conf.PREFIX+"pause":
