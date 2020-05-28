@@ -23,6 +23,20 @@ func create_name_to_get(s string)(string){
 	name = strings.TrimSuffix(name, "%20")
 	return name
 }
+func skip_music(s *discordgo.Session, m *discordgo.MessageCreate){
+	channel, err := s.State.Channel(m.ChannelID)
+	if err != nil {
+		fmt.Println(err)
+	}
+	guild, _ := s.State.Guild(channel.GuildID)
+	for _, vs := range guild.VoiceStates {
+		if vs.UserID == m.Author.ID {
+			servers_vc[vs.GuildID].music_queue[0].skip = make(chan bool)
+			servers_vc[vs.GuildID].music_queue[0].skip <- true
+			skip_msg(s, m.ChannelID)
+		}
+	}
+}
 func stop_stream(s *discordgo.Session, m *discordgo.MessageCreate){
 	channel, err := s.State.Channel(m.ChannelID)
 	if err != nil {
@@ -164,7 +178,18 @@ func get_url(videoURL string) (string, string) {
 	format := vid.Formats.Extremes(ytdl.FormatAudioBitrateKey, true)[0]
 	DownloadURL, err := client.GetDownloadURL(c, vid, format)
 	if err != nil{
-		fmt.Println("failed_to_download ", err)
+		for i:=0;i<=5;i++{
+			if err.Error()=="Couldn't extract url from format"{
+				vid, err := client.GetVideoInfo(c, videoURL)
+				format := vid.Formats.Extremes(ytdl.FormatAudioBitrateKey, true)[0]
+				DownloadURL, err = client.GetDownloadURL(c, vid, format)
+				if err == nil{
+					break
+				}
+			} else {
+				break
+			}
+		}
 	}
 	return DownloadURL.String(), vid.Title
 }
@@ -181,6 +206,8 @@ func play(guildID, channelID, url string, vc *discordgo.VoiceConnection) bool {
 		select {
 		case <-servers_vc[guildID].music_queue[0].pause:
 			<-servers_vc[guildID].music_queue[0].pause
+		case  <-servers_vc[guildID].music_queue[0].skip:
+			return false
 		default:
 			if (servers_vc[guildID].music_queue[0].stop==true){
 				return true
@@ -196,7 +223,7 @@ func play(guildID, channelID, url string, vc *discordgo.VoiceConnection) bool {
 			vc.OpusSend <- Inbuf
 		}
 	}
-	return true
+	return false
 }
 func get_vc_connection(s *discordgo.Session, guildID, channelID string) (*discordgo.VoiceConnection){
 	vc, _ := s.ChannelVoiceJoin(guildID, channelID, false, false)

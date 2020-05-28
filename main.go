@@ -55,6 +55,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate){
 			go stop_stream(s, m)
 		case conf.PREFIX+"pause":
 			go pause_stream(s, m)
+		case conf.PREFIX+"skip":
+			go skip_music(s,m)
 	}
 	if (m.Content=="Снюс"){
 		s.ChannelMessageSend(m.ChannelID, "Чесвин")

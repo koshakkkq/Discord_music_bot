@@ -32,6 +32,7 @@ type music_info struct {
 	channelID string
 	pause chan bool
 	stop bool
+	skip chan bool
 	s *discordgo.Session
 }
 var (

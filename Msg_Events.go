@@ -18,3 +18,6 @@ func pause_msg(s *discordgo.Session, channelID string){
 func stop_msg(s *discordgo.Session, channelID string){
 	s.ChannelMessageSend(channelID, "Stream_stopped")
 }
+func skip_msg(s *discordgo.Session, channelID string){
+	s.ChannelMessageSend(channelID, "Skipped!")
+}
