@@ -21,3 +21,7 @@ func stop_msg(s *discordgo.Session, channelID string){
 func skip_msg(s *discordgo.Session, channelID string){
 	s.ChannelMessageSend(channelID, "Skipped!")
 }
+func gachi(s *discordgo.Session, channelID string){
+	s.ChannelMessageSend(channelID, "░░░░░▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░ \n░░░▓▓▓▓▓▓▒▒▒▒▒▒▓▓░░░░░░░ \n░░▓▓▓▓▒░░▒▒▓▓▒▒▓▓▓▓░░░░░ \n░▓▓▓▓▒░░▓▓▓▒▄▓░▒▄▄▄▓░░░░ \n▓▓▓▓▓▒░░▒▀▀▀▀▒░▄░▄▒▓▓░░░ \n▓▓▓▓▓▒░░▒▒▒▒▒▓▒▀▒▀▒▓▒▓░░ \n▓▓▓▓▓▒▒░░░▒▒▒░░▄▀▀▀▄▓▒▓░ \n▓▓▓▓▓▓▒▒░░░▒▒▓▀▄▄▄▄▓▒▒▒▓ \n░▓█▀▄▒▓▒▒░░░▒▒░░▀▀▀▒▒▒▒░ \n░░▓█▒▒▄▒▒▒▒▒▒▒░░▒▒▒▒▒▒▓░ \n░░░▓▓▓▓▒▒▒▒▒▒▒▒░░░▒▒▒▓▓░ \n░░░░░▓▓▒░░▒▒▒▒▒▒▒▒▒▒▒▓▓░ \n░░░░░░▓▒▒░░░░▒▒▒▒▒▒▒▓▓░░")
+
+}

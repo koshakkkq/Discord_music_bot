@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/binary"
 	"encoding/json"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/jonas747/dca"
+	"github.com/kkdai/youtube"
 	"github.com/rs/zerolog/log"
 	"github.com/rylio/ytdl"
 	"io/ioutil"
@@ -164,7 +166,7 @@ func play_on_server(guildID string){
 	servers_vc[guildID].vc.Disconnect()
 	delete(servers_vc, guildID)
 }
-func get_url(videoURL string) (string, string) {
+func get_url1(videoURL string) (string, string) {
 	client := ytdl.Client{
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Logger,
@@ -193,14 +195,32 @@ func get_url(videoURL string) (string, string) {
 	}
 	return DownloadURL.String(), vid.Title
 }
+
+func get_url(videoURL string) (string, string) {
+	client := youtube.Client{
+		Debug:      false,
+		HTTPClient: http.DefaultClient,
+	}
+	vid, err := client.GetVideo(videoURL)
+	if (err!=nil){
+		return "", ""
+	}
+	spew.Dump(vid.Formats)
+	format := vid.Formats.FindByItag(249)
+	url, _ := client.GetStreamURL(vid, format)
+	fmt.Println(url)
+	//return b.ID
+	return url, vid.Title
+}
 func play(guildID, channelID, url string, vc *discordgo.VoiceConnection) bool {
 	options := dca.StdEncodeOptions
 	options.RawOutput = true
 	options.Bitrate = 96
 	options.Application = "lowdelay"
+	options.Volume = 500
 	dca.EncodeFile(url, options)
-
-	encode, _ := dca.EncodeFile(url, options)
+	encode, err := dca.EncodeFile(url, options)
+	fmt.Println(err)
 	defer encode.Cleanup()
 	for {
 		select {
